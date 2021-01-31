@@ -73,7 +73,7 @@ def run(opts):
     }
 
     # determine the parameter space
-    sweep_config = {
+    """sweep_config = {
         'parameters': {
             'batch_size': {
                 'values': [256, 128, 64, 32]
@@ -84,11 +84,11 @@ def run(opts):
             'lr_critic': {
                 'values': [1e-2, 1e-3, 1e-4, 3e-4, 3e-5, 1e-5]
             },
-            'lr_model': {
+            'lr_decay': {
                 'lr_decay': [0.9, 0.95, 1.0, 1.05, 1.1, 1.15]
             },
         }
-    }
+    }"""
     # initialize the sweep
     # sweep_id = wandb.sweep(sweep_config, project="Pytorch-sweeps")
 
@@ -167,9 +167,9 @@ def run(opts):
 
     # Initialize optimizer
     optimizer = optim.Adam(
-        [{'params': model.parameters(), 'lr': opts.lr_model}]
+        [{'params': model.parameters(), 'lr': config.lr_model}]
         + (
-            [{'params': baseline.get_learnable_parameters(), 'lr': opts.lr_critic}]
+            [{'params': baseline.get_learnable_parameters(), 'lr': config.lr_critic}]
             if len(baseline.get_learnable_parameters()) > 0
             else []
         )
@@ -185,7 +185,7 @@ def run(opts):
                     state[k] = v.to(opts.device)
 
     # Initialize learning rate scheduler, decay by lr_decay once per epoch!
-    lr_scheduler = optim.lr_scheduler.LambdaLR(optimizer, lambda epoch: opts.lr_decay ** epoch)
+    lr_scheduler = optim.lr_scheduler.LambdaLR(optimizer, lambda epoch: config.lr_decay ** epoch)
 
     # Start the actual training loop
     val_dataset = problem.make_dataset(
@@ -218,7 +218,8 @@ def run(opts):
                 problem,
                 tb_logger,
                 opts,
-                start_time
+                start_time,
+                config
             )
             train_run.append(avg_time)
             for hr in opts.save_hrs:
